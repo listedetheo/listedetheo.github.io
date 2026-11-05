@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Espace Théo — Liste de Noël</title>
+<meta name="theme-color" content="#0F1C17">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%238C2635'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-family='Georgia' font-style='italic' font-size='32' fill='%23F2D9C9'%3ET%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body class="admin">
+<header class="admin-head">
+  <div>
+    <span class="kg">Espace Théo</span>
+    <h1>Ma liste de Noël</h1>
+    <p>Ici, tu ajoutes et modifies tes cadeaux. Aucune réservation n'est jamais affichée sur cette page.</p>
+  </div>
+  <nav class="admin-nav"><a href="./">Voir la liste</a><span id="who"></span></nav>
+</header>
+<main class="admin-main" id="app" aria-live="polite"><p class="state-msg">Chargement…</p></main>
+<div id="toast-root" aria-live="polite"></div>
+<script type="module" src="assets/js/admin.js"></script>
+</body>
+</html>

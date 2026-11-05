@@ -1,0 +1,19 @@
+name: Garder la base active
+
+# Supabase (plan gratuit) met le projet en pause après 7 jours sans visite.
+# Cette tâche interroge la liste tous les 3 jours pour l'éviter.
+on:
+  schedule:
+    - cron: '23 7 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interroger la liste
+        run: |
+          curl -fsS -X POST "https://emnayirdmyctyfjjzdlr.supabase.co/rest/v1/rpc/get_board" \
+            -H "apikey: sb_publishable_DLIqa4wSo4epz_rIkom7lA_51gQgSfe" \
+            -H "Content-Type: application/json" \
+            -d '{}' -o /dev/null -w "Réponse : %{http_code}\n"

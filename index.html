@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La liste de Noël de Théo</title>
+<meta name="description" content="La liste de Noël de Théo : réserve un cadeau pour éviter les doublons.">
+<meta name="theme-color" content="#0F1C17">
+<meta property="og:title" content="La liste de Noël de Théo">
+<meta property="og:description" content="Une lettre est arrivée : choisis un cadeau et réserve-le. Le secret est bien gardé.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%238C2635'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-family='Georgia' font-style='italic' font-size='32' fill='%23F2D9C9'%3ET%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- Ouverture : l'enveloppe (première visite seulement) -->
+<div class="intro" id="intro" role="dialog" aria-label="Une lettre est arrivée">
+  <div class="scene" data-scene="intro"></div>
+  <button class="skip-intro" type="button" data-action="skip-intro">Passer</button>
+  <div class="intro-inner">
+    <div class="intro-title">
+      <span class="kg">Noël · MMXXVI</span>
+      <h1>Une lettre est arrivée</h1>
+    </div>
+    <div class="env">
+      <div class="letter"><span class="k">Noël 2026</span><span class="letter-title">La liste<br>de Théo</span></div>
+      <div class="env-body">
+        <div class="env-frame"></div>
+        <div class="env-address"><span class="to">Pour toute la famille</span><span class="from">de la part de Théo</span></div>
+      </div>
+      <div class="flap"></div>
+      <button class="seal-btn" type="button" data-action="open-seal" aria-label="Briser le sceau et ouvrir la lettre">
+        <span class="half half-l"><span class="wax">T</span></span>
+        <span class="half half-r"><span class="wax">T</span></span>
+      </button>
+    </div>
+    <p class="hint"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D2B072" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg>Touche le sceau pour ouvrir</p>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="scene" data-scene="hero"></div>
+  <div class="hero-content">
+    <span class="kg">Noël · MMXXVI</span>
+    <h1>La liste<br>de Théo</h1>
+    <div class="ornament" aria-hidden="true"><span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"></path><path d="M12 2v20"></path><path d="m20 16-4-4 4-4"></path><path d="m4 8 4 4-4 4"></path><path d="m16 4-4 4-4-4"></path><path d="m8 20 4-4 4 4"></path></svg><span></span></div>
+    <div class="countdown" id="countdown"></div>
+    <p>Choisis un cadeau et réserve-le. Les autres le verront, Théo jamais.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="owner-banner"></div>
+  <nav class="tabs" id="tabs" aria-label="Filtrer la liste"></nav>
+  <div id="hello"></div>
+  <div class="grid" id="grid" aria-live="polite"></div>
+  <div id="state"></div>
+</main>
+
+<footer class="footer">
+  <div class="ornament" aria-hidden="true"><span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"></path><path d="M12 2v20"></path><path d="m20 16-4-4 4-4"></path><path d="m4 8 4 4-4 4"></path><path d="m16 4-4 4-4-4"></path><path d="m8 20 4-4 4 4"></path></svg><span></span></div>
+  <p class="footer-quote">Théo ne saura jamais qui a réservé quoi.</p>
+  <div id="footer-extra"></div>
+  <button class="footer-small" type="button" data-action="replay-intro">Revoir l'ouverture</button>
+  <a class="footer-owner" href="admin.html">Espace Théo</a>
+</footer>
+<svg class="drift" viewBox="0 0 1600 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#D9DED9" fill-opacity=".14" d="M0 40 C200 18 380 44 600 30 C800 16 960 40 1180 28 C1340 18 1460 30 1600 22 L1600 90 L0 90 Z"></path><path fill="#E8E6DF" fill-opacity=".9" d="M0 62 C160 44 340 62 530 52 C730 40 900 60 1080 50 C1270 40 1420 56 1600 46 L1600 90 L0 90 Z"></path></svg>
+
+<div id="sheet-root"></div>
+<div id="done-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+
+<noscript><p style="padding:24px;text-align:center">Active JavaScript pour voir la liste.</p></noscript>
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

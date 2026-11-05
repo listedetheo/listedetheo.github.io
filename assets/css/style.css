@@ -48,7 +48,7 @@ a:hover { color: var(--gold-2); }
 .scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .sky { position: absolute; inset: 0; background: linear-gradient(180deg, var(--night-deep) 0%, #0D1D17 55%, var(--night) 100%); }
 .moon {
-  position: absolute; top: 64px; right: max(40px, 8%); width: 64px; height: 64px; border-radius: 50%;
+  position: absolute; top: 30px; right: 22px; width: 46px; height: 46px; border-radius: 50%;
   background: radial-gradient(circle at 38% 36%, #FFFBF2 0%, #EFE6D3 55%, #D8CCB4 100%);
   box-shadow: 0 0 40px 10px rgba(242, 234, 219, .16), 0 0 140px 50px rgba(242, 234, 219, .06);
 }
@@ -130,8 +130,9 @@ a:hover { color: var(--gold-2); }
 .owner-banner { position: relative; z-index: 3; margin: 0 auto 18px; max-width: 760px; padding: 12px 16px; border-radius: 12px; background: rgba(140, 38, 53, .22); border: 1px solid rgba(230, 203, 147, .45); color: var(--text); font-size: 15px; text-align: center; }
 
 /* ---------- Filtres et salutation ---------- */
-.tabs { display: flex; justify-content: center; gap: 26px; margin: 4px auto 22px; padding: 0 24px; max-width: 760px; border-bottom: 1px solid rgba(210, 176, 114, .25); }
-.tab { min-height: 44px; padding: 0 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-3); font: 500 15px var(--sans); cursor: pointer; }
+.tabs { display: flex; justify-content: center; gap: 14px; margin: 4px auto 22px; padding: 0 8px; max-width: 760px; border-bottom: 1px solid rgba(210, 176, 114, .25); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: none; min-height: 44px; padding: 0 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-3); font: 500 14px var(--sans); white-space: nowrap; cursor: pointer; }
 .tab[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--gold); }
 .tab:hover { color: var(--text); }
 .hello { margin: 0 auto 26px; max-width: 760px; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(210, 176, 114, .4); background: rgba(244, 237, 224, .05); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
@@ -319,8 +320,12 @@ legend { padding: 0; margin-bottom: 10px; }
   .hero-content { padding-top: 76px; gap: 16px; }
   .hero h1 { font-size: 76px; }
   .hero p { max-width: 440px; font-size: 17px; }
-  .moon { width: 80px; height: 80px; top: 70px; }
-  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 880px; gap: 30px 26px; }
+  .moon { width: 80px; height: 80px; top: 70px; right: max(40px, 8%); }
+  .tabs { gap: 26px; padding: 0 24px; }
+  .tab { font-size: 15px; }
+  /* Flex plutôt que grid : une carte seule (ou la dernière d'une ligne) reste centrée */
+  .grid { display: flex; flex-wrap: wrap; justify-content: center; max-width: 880px; gap: 30px 26px; }
+  .grid > .hang { flex: 0 1 calc((100% - 26px) / 2); min-width: 0; }
   .hang { animation-duration: 9s; }
   @keyframes sway { 0%, 100% { transform: rotate(-.4deg); } 50% { transform: rotate(.4deg); } }
   .sheet {
@@ -332,7 +337,8 @@ legend { padding: 0; margin-bottom: 10px; }
   @keyframes modalIn { from { transform: translate(-50%, -46%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
 }
 @media (min-width: 1140px) {
-  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 1180px; }
+  .grid { max-width: 1180px; }
+  .grid > .hang { flex-basis: calc((100% - 52px) / 3); }
 }
 
 /* ---------- Moins d'animations ---------- */

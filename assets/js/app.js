@@ -128,6 +128,20 @@ function renderHello() {
   </div>`;
 }
 
+/* Regroupe les cadeaux par catégorie, dans l'ordre choisi par Théo ; les cadeaux sans catégorie vont à la fin. */
+function groupByCategory(list) {
+  const order = (state.board && state.board.categories) || [];
+  const map = new Map();
+  list.forEach((g) => {
+    const key = g.category && order.includes(g.category) ? g.category : null;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(g);
+  });
+  const groups = order.filter((c) => map.has(c)).map((c) => ({ name: c, items: map.get(c) }));
+  if (map.has(null)) groups.push({ name: null, items: map.get(null) });
+  return groups;
+}
+
 function visible(g) {
   const open = isOpen(g);
   switch (state.filter) {
@@ -242,10 +256,20 @@ function renderGrid() {
   const all = gifts();
   if (!all.length) { grid.innerHTML = ''; st.innerHTML = '<p class="state-msg">La liste arrive bientôt…</p>'; return; }
   const delays = [-1, -4, -2.5, -5.5, -3, -6.5];
-  grid.innerHTML = all.map((g, idx) => {
-    if (!visible(g)) return '';
-    const card = isOpen(g) ? openCard(g, idx + 1) : closedCard(g, idx + 1);
-    return `<div class="hang" id="cadeau-${g.id}" style="animation-delay:${delays[idx % delays.length]}s"><span class="pin" aria-hidden="true"></span><span class="string" aria-hidden="true"></span>${card}</div>`;
+  const groups = groupByCategory(all);
+  const withHeads = groups.length > 1 || (groups.length === 1 && groups[0].name !== null);
+  let n = 0;
+  grid.innerHTML = groups.map((grp) => {
+    const cards = grp.items.map((g) => {
+      n += 1;
+      if (!visible(g)) return '';
+      const card = isOpen(g) ? openCard(g, n) : closedCard(g, n);
+      return `<div class="hang" id="cadeau-${g.id}" style="animation-delay:${delays[n % delays.length]}s"><span class="pin" aria-hidden="true"></span><span class="string" aria-hidden="true"></span>${card}</div>`;
+    }).join('');
+    if (!cards) return '';
+    const count = grp.items.filter(visible).length;
+    const head = withHeads ? `<h2 class="cat-head"><span class="cat-name">${esc(grp.name || 'Autres envies')}</span><span class="cat-count">${count}</span></h2>` : '';
+    return head + cards;
   }).join('');
   const shown = all.filter(visible).length;
   st.innerHTML = shown ? '' : `<p class="state-msg">${state.filter === 'mine' ? 'Tu n’as encore rien réservé.' : 'Rien ici pour l’instant.'}</p>`;

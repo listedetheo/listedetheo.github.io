@@ -8,7 +8,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const euro = (n) => { const v = Math.round(Number(n) * 100) / 100; return (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',')) + ' €'; };
 const PRIO = { reve: 'Le rêve', grande: 'Grande envie', envie: 'Envie' };
 
-const state = { session: null, owner: false, gifts: [], editing: null, confirmDelete: null, busy: false, sentTo: '' };
+const state = { session: null, owner: false, gifts: [], categories: [], editing: null, confirmDelete: null, busy: false, sentTo: '' };
+const NEW_CAT = '__new__';
 
 let toastTimer = null;
 function toast(msg) {
@@ -48,24 +49,37 @@ function renderNotOwner() {
 
 /* ---------- Liste ---------- */
 async function loadGifts() {
-  const { data, error } = await sb.from('gifts').select('*').order('position', { ascending: true }).order('created_at', { ascending: true });
-  if (error) { toast('Impossible de charger tes cadeaux.'); return; }
-  state.gifts = data || [];
+  const [gr, cr] = await Promise.all([
+    sb.from('gifts').select('*').order('position', { ascending: true }).order('created_at', { ascending: true }),
+    sb.from('categories').select('*').order('position', { ascending: true }).order('name', { ascending: true })
+  ]);
+  if (gr.error) { toast('Impossible de charger tes cadeaux.'); return; }
+  state.categories = cr.error ? [] : (cr.data || []).map((c) => c.name);
+  // Même ordre que sur la liste publique : par catégorie, puis par position
+  const rank = (g) => { const i = state.categories.indexOf(g.category); return i < 0 ? state.categories.length : i; };
+  state.gifts = (gr.data || []).slice().sort((a, b) => rank(a) - rank(b) || (a.position || 0) - (b.position || 0));
 }
+
+const catOf = (g) => (g.category && state.categories.includes(g.category) ? g.category : null);
 
 function renderList() {
   const items = state.gifts.map((g, i) => {
+    const prev = state.gifts[i - 1];
+    const next = state.gifts[i + 1];
+    const head = (i === 0 || catOf(prev) !== catOf(g)) ? `<h3 class="cat-sub">${esc(catOf(g) || 'Sans catégorie')}</h3>` : '';
+    const firstInCat = !prev || catOf(prev) !== catOf(g);
+    const lastInCat = !next || catOf(next) !== catOf(g);
     const thumb = g.image_url ? `<img class="thumb" src="${esc(g.image_url)}" alt="">` : '<div class="thumb">—</div>';
     const del = state.confirmDelete === g.id
       ? `<div class="warn span-2" style="grid-column:1/-1">Supprimer ${esc(g.name)} ? Si quelqu'un l'a déjà réservé, sa réservation disparaîtra sans qu'il soit prévenu.
           <div class="btn-row" style="margin-top:10px"><button class="b b-main" type="button" data-action="delete-yes" data-id="${g.id}">Oui, supprimer</button><button class="b b-line" type="button" data-action="delete-no">Annuler</button></div></div>`
       : '';
-    return `<div class="item">
+    return `${head}<div class="item">
       ${thumb}
       <div><h3>${esc(g.name)}</h3><div class="meta">${euro(g.price)} · ${esc(PRIO[g.priority] || '')}${(g.specs || []).length ? ' · ' + esc(g.specs.join(' · ')) : ''}${g.url ? '' : ' · <strong>sans lien</strong>'}${g.image_url ? '' : ' · <strong>sans photo</strong>'}</div></div>
       <div class="item-actions">
-        <button class="mini" type="button" data-action="up" data-id="${g.id}" aria-label="Monter" ${i === 0 ? 'disabled' : ''}>↑</button>
-        <button class="mini" type="button" data-action="down" data-id="${g.id}" aria-label="Descendre" ${i === state.gifts.length - 1 ? 'disabled' : ''}>↓</button>
+        <button class="mini" type="button" data-action="up" data-id="${g.id}" aria-label="Monter" ${firstInCat ? 'disabled' : ''}>↑</button>
+        <button class="mini" type="button" data-action="down" data-id="${g.id}" aria-label="Descendre" ${lastInCat ? 'disabled' : ''}>↓</button>
         <button class="mini" type="button" data-action="edit" data-id="${g.id}">Modifier</button>
         <button class="mini danger" type="button" data-action="delete-ask" data-id="${g.id}">Supprimer</button>
       </div>
@@ -81,7 +95,7 @@ function renderList() {
 
 /* ---------- Formulaire ---------- */
 function blank() {
-  return { id: null, name: '', price: '', priority: 'envie', specs: [], note: '', url: '', merchant: '', image_url: '', allow_group: true };
+  return { id: null, name: '', price: '', priority: 'envie', category: '', newCat: '', specs: [], note: '', url: '', merchant: '', image_url: '', allow_group: true };
 }
 
 function renderForm() {
@@ -95,6 +109,12 @@ function renderForm() {
         <option value="reve" ${g.priority === 'reve' ? 'selected' : ''}>Le rêve (3 étoiles)</option>
         <option value="grande" ${g.priority === 'grande' ? 'selected' : ''}>Grande envie (2 étoiles)</option>
         <option value="envie" ${g.priority === 'envie' ? 'selected' : ''}>Envie</option></select></div>
+      <div class="field span-2"><label class="k" for="f-cat">Catégorie</label><select id="f-cat" class="box-sel">
+        ${state.categories.map((c) => `<option value="${esc(c)}" ${g.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+        <option value="" ${!g.category ? 'selected' : ''}>Sans catégorie</option>
+        <option value="${NEW_CAT}" ${g.category === NEW_CAT ? 'selected' : ''}>+ Nouvelle catégorie…</option></select>
+        <input id="f-newcat" class="box-in" maxlength="40" value="${esc(g.newCat)}" placeholder="Nom de la nouvelle catégorie" ${g.category === NEW_CAT ? '' : 'hidden'}>
+        <span class="help">Sur la liste, les cadeaux sont regroupés par catégorie.</span></div>
       <div class="field span-2"><label class="k" for="f-url">Lien vers le produit exact</label><input id="f-url" class="box-in" type="url" value="${esc(g.url)}" placeholder="https://…">
         <span class="help">Ouvre le lien pour vérifier qu'il tombe sur la bonne taille et la bonne couleur.</span>
         <div class="btn-row"><button class="b b-line" type="button" data-action="test-link">Ouvrir le lien</button></div></div>
@@ -120,6 +140,8 @@ function readForm() {
   g.name = $('#f-name').value.trim();
   g.price = $('#f-price').value.trim();
   g.priority = $('#f-prio').value;
+  g.category = $('#f-cat').value;
+  g.newCat = $('#f-newcat').value.trim();
   g.url = $('#f-url').value.trim();
   g.merchant = $('#f-merchant').value.trim();
   g.specs = $('#f-specs').value.split(',').map((s) => s.trim()).filter(Boolean);
@@ -137,8 +159,19 @@ async function save() {
   if (!g.name) return formError('Donne un nom au cadeau.');
   if (!(price > 0)) return formError('Indique un prix valide, par exemple 49,99.');
   if (g.url && !/^https?:\/\//i.test(g.url)) return formError('Le lien doit commencer par https://');
+  let category = g.category || null;
+  if (category === NEW_CAT) {
+    if (!g.newCat) return formError('Donne un nom à la nouvelle catégorie.');
+    const existing = state.categories.find((c) => c.toLowerCase() === g.newCat.toLowerCase());
+    category = existing || g.newCat;
+    if (!existing) {
+      const { error } = await sb.from('categories').insert({ name: category, position: state.categories.length + 1 });
+      if (error) return formError('Impossible de créer la catégorie : ' + error.message);
+      state.categories.push(category);
+    }
+  }
   const row = {
-    name: g.name, price, priority: g.priority, specs: g.specs, note: g.note || null,
+    name: g.name, price, priority: g.priority, category, specs: g.specs, note: g.note || null,
     url: g.url || null, merchant: g.merchant || null, image_url: g.image_url || null, allow_group: g.allow_group
   };
   state.busy = true; renderFormKeep();
@@ -196,16 +229,12 @@ async function move(id, dir) {
   const i = state.gifts.findIndex((g) => g.id === id);
   const j = i + dir;
   if (i < 0 || j < 0 || j >= state.gifts.length) return;
-  const a = state.gifts[i];
-  const b = state.gifts[j];
-  const pa = j + 1;
-  const pb = i + 1;
-  const r1 = await sb.from('gifts').update({ position: pa }).eq('id', a.id);
-  const r2 = await sb.from('gifts').update({ position: pb }).eq('id', b.id);
-  if (r1.error || r2.error) toast('Impossible de changer l’ordre.');
-  // Renumérote proprement tout le reste
-  await loadGifts();
-  await Promise.all(state.gifts.map((g, k) => (g.position !== k + 1 ? sb.from('gifts').update({ position: k + 1 }).eq('id', g.id) : null)));
+  if (catOf(state.gifts[i]) !== catOf(state.gifts[j])) return; // on ne change pas de catégorie avec les flèches
+  const order = state.gifts.slice();
+  [order[i], order[j]] = [order[j], order[i]];
+  // Renumérote tout dans l'ordre affiché
+  const res = await Promise.all(order.map((g, k) => (g.position !== k + 1 ? sb.from('gifts').update({ position: k + 1 }).eq('id', g.id) : null)));
+  if (res.some((r) => r && r.error)) toast('Impossible de changer l’ordre.');
   await loadGifts();
   renderList();
 }
@@ -230,7 +259,7 @@ document.addEventListener('click', async (e) => {
     case 'reload': location.reload(); break;
     case 'logout': await sb.auth.signOut(); location.reload(); break;
     case 'new': state.editing = blank(); renderForm(); break;
-    case 'edit': { const g = state.gifts.find((x) => x.id === id); state.editing = { ...blank(), ...g, price: String(g.price).replace('.', ','), note: g.note || '', url: g.url || '', merchant: g.merchant || '', image_url: g.image_url || '' }; renderForm(); break; }
+    case 'edit': { const g = state.gifts.find((x) => x.id === id); state.editing = { ...blank(), ...g, price: String(g.price).replace('.', ','), note: g.note || '', url: g.url || '', merchant: g.merchant || '', image_url: g.image_url || '', category: catOf(g) || '', newCat: '' }; renderForm(); break; }
     case 'cancel-edit': state.editing = null; renderList(); break;
     case 'save': save(); break;
     case 'test-link': { const u = $('#f-url').value.trim(); if (/^https?:\/\//i.test(u)) window.open(u, '_blank', 'noopener'); else formError('Colle d’abord un lien qui commence par https://'); break; }
@@ -251,6 +280,11 @@ document.addEventListener('click', async (e) => {
 
 document.addEventListener('change', (e) => {
   if (e.target.id === 'f-file' && e.target.files && e.target.files[0]) upload(e.target.files[0]);
+  if (e.target.id === 'f-cat') {
+    const nc = $('#f-newcat');
+    nc.hidden = e.target.value !== NEW_CAT;
+    if (!nc.hidden) nc.focus();
+  }
   if (e.target.id === 'f-url') {
     const m = $('#f-merchant');
     if (m && !m.value.trim()) {

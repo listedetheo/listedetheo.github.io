@@ -147,6 +147,13 @@ a:hover { color: var(--gold-2); }
 .wrap { padding: 0 20px; }
 .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; max-width: 480px; margin: 0 auto; align-items: start; }
 .state-msg { max-width: 480px; margin: 20px auto; text-align: center; color: var(--text-2); font-size: 16px; }
+/* Titres de catégorie : un fil doré de part et d'autre, comme une guirlande */
+.cat-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; margin: 26px 0 -4px; font: italic 400 26px/1.1 var(--serif); color: var(--text); }
+.cat-head:first-child { margin-top: 0; }
+.cat-head::before, .cat-head::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(210, 176, 114, .55)); }
+.cat-head::after { background: linear-gradient(90deg, rgba(210, 176, 114, .55), transparent); }
+.cat-count { order: 2; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 999px; border: 1px solid rgba(210, 176, 114, .55); color: var(--gold); font: 500 13px/24px var(--sans); font-style: normal; text-align: center; }
+.cat-head::after { order: 3; }
 
 .hang { position: relative; padding-top: 30px; transform-origin: 50% 0; animation: sway 7s ease-in-out infinite; }
 @keyframes sway { 0%, 100% { transform: rotate(-.7deg); } 50% { transform: rotate(.7deg); } }
@@ -326,6 +333,8 @@ legend { padding: 0; margin-bottom: 10px; }
   /* Flex plutôt que grid : une carte seule (ou la dernière d'une ligne) reste centrée */
   .grid { display: flex; flex-wrap: wrap; justify-content: center; max-width: 880px; gap: 30px 26px; }
   .grid > .hang { flex: 0 1 calc((100% - 26px) / 2); min-width: 0; }
+  .grid > .cat-head { flex: 0 0 100%; margin-top: 34px; font-size: 30px; }
+  .grid > .cat-head:first-child { margin-top: 0; }
   .hang { animation-duration: 9s; }
   @keyframes sway { 0%, 100% { transform: rotate(-.4deg); } 50% { transform: rotate(.4deg); } }
   .sheet {

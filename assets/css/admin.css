@@ -41,3 +41,5 @@ body.admin { background: var(--night); padding-bottom: 60px; }
 
 .cat-sub { margin: 18px 0 4px; font: italic 400 20px var(--serif, Georgia, serif); color: #7A5A22; }
 .cat-sub:first-child { margin-top: 0; }
+.divider { height: 1px; background: var(--line); margin: 4px 0; }
+.pw-panel { border: 2px solid var(--gold); }

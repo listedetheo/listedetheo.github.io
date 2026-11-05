@@ -8,7 +8,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const euro = (n) => { const v = Math.round(Number(n) * 100) / 100; return (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',')) + ' €'; };
 const PRIO = { reve: 'Le rêve', grande: 'Grande envie', envie: 'Envie' };
 
-const state = { session: null, owner: false, gifts: [], categories: [], editing: null, confirmDelete: null, busy: false, sentTo: '' };
+const state = { session: null, owner: false, gifts: [], categories: [], editing: null, confirmDelete: null, busy: false, sentTo: '', pwOpen: false };
 const NEW_CAT = '__new__';
 
 let toastTimer = null;
@@ -19,23 +19,57 @@ function toast(msg) {
 }
 
 /* ---------- Connexion ---------- */
-function renderLogin(error = '') {
+const LAST_EMAIL = 'ldn_admin_email';
+const lastEmail = () => { try { return localStorage.getItem(LAST_EMAIL) || ''; } catch (e) { return ''; } };
+const rememberEmail = (v) => { try { localStorage.setItem(LAST_EMAIL, v); } catch (e) { /* stockage indisponible */ } };
+
+function renderLogin(error = '', info = '') {
   $('#who').textContent = '';
   app.innerHTML = `<section class="panel" style="max-width:520px">
     <h2>Connexion</h2>
-    <p class="lead">Entre ton adresse e-mail : tu reçois un lien de connexion. Pas de mot de passe à retenir.</p>
-    <div class="field"><label class="k" for="email">Ton e-mail</label><input id="email" class="box-in" type="email" autocomplete="email" placeholder="prenom@exemple.fr"></div>
+    <p class="lead">Une fois connecté, cet appareil reste connecté, même si tu fermes la page.</p>
+    ${info ? `<p class="okmsg">${esc(info)}</p>` : ''}
+    <div class="field"><label class="k" for="email">Ton e-mail</label><input id="email" class="box-in" type="email" autocomplete="username" value="${esc(state.sentTo || lastEmail())}" placeholder="prenom@exemple.fr"></div>
+    <div class="field"><label class="k" for="pw">Mot de passe</label><input id="pw" class="box-in" type="password" autocomplete="current-password" placeholder="••••••••"></div>
     ${error ? `<p class="err">${esc(error)}</p>` : ''}
-    <div class="btn-row"><button class="b b-main" type="button" data-action="send-link">Recevoir le lien</button></div>
+    <div class="btn-row"><button class="b b-main" type="button" data-action="login-pw">Se connecter</button></div>
+    <div class="divider"></div>
+    <p class="lead">Pas encore de mot de passe, ou oublié ? Reçois un lien de connexion par e-mail. <strong>Chaque lien ne sert qu'une fois</strong> et connecte seulement l'appareil sur lequel tu l'ouvres.</p>
+    <div class="btn-row"><button class="b b-line" type="button" data-action="send-link">Recevoir un lien par e-mail</button></div>
   </section>`;
 }
 
 function renderSent() {
   app.innerHTML = `<section class="panel" style="max-width:520px">
     <h2>Regarde tes e-mails</h2>
-    <p class="lead">Un lien de connexion vient d'être envoyé à <strong>${esc(state.sentTo)}</strong>. Ouvre-le sur cet appareil. Pense à vérifier les courriers indésirables.</p>
-    <div class="btn-row"><button class="b b-line" type="button" data-action="back-login">Changer d'adresse</button></div>
+    <p class="lead">Un lien vient d'être envoyé à <strong>${esc(state.sentTo)}</strong>. Ouvre-le <strong>sur l'appareil que tu veux connecter</strong> : il ne sert qu'une fois. Pense à vérifier les courriers indésirables.</p>
+    <p class="lead">Une fois connecté, crée ton mot de passe : tu n'auras plus besoin d'e-mail sur tes autres appareils.</p>
+    <div class="btn-row"><button class="b b-line" type="button" data-action="back-login">Retour</button></div>
   </section>`;
+}
+
+/* Erreurs renvoyées par Supabase dans l'adresse après un clic sur un lien e-mail */
+function linkErrorFromUrl() {
+  const raw = (location.hash || '').replace(/^#/, '') + '&' + (location.search || '').replace(/^\?/, '');
+  const p = new URLSearchParams(raw);
+  const code = p.get('error_code') || p.get('error');
+  if (!code) return '';
+  history.replaceState(null, '', location.pathname);
+  if (code === 'otp_expired' || code === 'access_denied') return 'Ce lien a déjà servi ou a expiré : chaque lien ne marche qu’une fois. Connecte-toi avec ton mot de passe, ou demande un nouveau lien.';
+  return 'Le lien n’a pas fonctionné (' + code + '). Connecte-toi avec ton mot de passe, ou demande un nouveau lien.';
+}
+
+function frAuthError(error) {
+  const code = error && (error.code || '');
+  const msg = (error && error.message) || '';
+  if (code === 'over_email_send_rate_limit' || error.status === 429 || /rate limit/i.test(msg)) {
+    return 'Trop de liens demandés : le service d’e-mail gratuit n’en envoie que 2 par heure pour tout le site. Réessaie dans une heure, ou connecte-toi avec ton mot de passe.';
+  }
+  if (code === 'invalid_credentials' || /invalid login credentials/i.test(msg)) return 'E-mail ou mot de passe incorrect. Si tu n’as pas encore créé de mot de passe, demande un lien par e-mail.';
+  if (code === 'weak_password' || /password should be/i.test(msg)) return 'Mot de passe trop faible : au moins 8 caractères, mélange lettres et chiffres.';
+  if (code === 'same_password') return 'C’est déjà ton mot de passe actuel.';
+  if (code === 'reauthentication_needed') return 'Pour des raisons de sécurité, reconnecte-toi avec un lien e-mail puis recommence.';
+  return msg || 'Erreur inconnue.';
 }
 
 function renderNotOwner() {
@@ -86,11 +120,47 @@ function renderList() {
       ${del}
     </div>`;
   }).join('');
-  app.innerHTML = `<section class="panel">
+  app.innerHTML = `${passwordPanel()}<section class="panel">
       <div class="btn-row" style="justify-content:space-between"><h2>Mes cadeaux (${state.gifts.length})</h2><button class="b b-main" type="button" data-action="new">Ajouter un cadeau</button></div>
       ${state.gifts.length ? `<div class="items">${items}</div>` : '<p class="lead">Aucun cadeau pour l’instant. Commence par en ajouter un.</p>'}
     </section>
-    <section class="panel"><p class="lead"><strong>Rappel :</strong> pour chaque lien, vérifie qu'il présélectionne bien la taille et la couleur. Sinon, indique-les dans les détails : ce sont eux qui évitent les erreurs.</p></section>`;
+    <section class="panel"><p class="lead"><strong>Rappel :</strong> pour chaque lien, vérifie qu'il présélectionne bien la taille et la couleur. Sinon, indique-les dans les détails : ce sont eux qui évitent les erreurs.</p></section>
+    ${hasPassword() && !state.pwOpen ? '<div class="btn-row"><button class="link-light" type="button" data-action="pw-open">Changer mon mot de passe</button></div>' : ''}`;
+}
+
+/* ---------- Mot de passe ---------- */
+const hasPassword = () => !!(state.session && state.session.user && state.session.user.user_metadata && state.session.user.user_metadata.has_password);
+
+function passwordPanel() {
+  if (hasPassword() && !state.pwOpen) return '';
+  const first = !hasPassword();
+  return `<section class="panel pw-panel">
+    <h2>${first ? 'Crée ton mot de passe' : 'Changer mon mot de passe'}</h2>
+    ${first ? '<p class="lead">Une seule fois. Ensuite, sur ton téléphone comme sur ton ordinateur, tu te connectes avec ton e-mail et ce mot de passe : plus besoin de lien. Chaque appareil reste connecté ensuite.</p>' : ''}
+    <input type="email" autocomplete="username" value="${esc(state.session.user.email)}" hidden>
+    <div class="form-grid">
+      <div class="field"><label class="k" for="pw1">Nouveau mot de passe</label><input id="pw1" class="box-in" type="password" autocomplete="new-password" minlength="8"></div>
+      <div class="field"><label class="k" for="pw2">Encore une fois</label><input id="pw2" class="box-in" type="password" autocomplete="new-password" minlength="8"></div>
+    </div>
+    <span class="help">Au moins 8 caractères. Laisse ton téléphone ou ton navigateur le retenir.</span>
+    <p class="err" id="pw-err" hidden></p>
+    <div class="btn-row"><button class="b b-main" type="button" data-action="pw-save">Enregistrer le mot de passe</button>${first ? '' : '<button class="b b-line" type="button" data-action="pw-close">Annuler</button>'}</div>
+  </section>`;
+}
+
+async function savePassword() {
+  const a = $('#pw1').value;
+  const b = $('#pw2').value;
+  const err = $('#pw-err');
+  const show = (m) => { err.textContent = m; err.hidden = !m; };
+  if (a.length < 8) return show('Au moins 8 caractères.');
+  if (a !== b) return show('Les deux mots de passe ne sont pas identiques.');
+  const { data, error } = await sb.auth.updateUser({ password: a, data: { has_password: true } });
+  if (error) return show(frAuthError(error));
+  if (data && data.user) state.session = { ...state.session, user: data.user };
+  state.pwOpen = false;
+  toast('Mot de passe enregistré. Sur tes autres appareils : e-mail + mot de passe.');
+  renderList();
 }
 
 /* ---------- Formulaire ---------- */
@@ -248,16 +318,29 @@ document.addEventListener('click', async (e) => {
     case 'send-link': {
       const email = $('#email').value.trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { renderLogin('Adresse e-mail invalide.'); return; }
+      state.sentTo = email; rememberEmail(email);
       t.disabled = true;
-      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-      if (error) { renderLogin('Envoi impossible : ' + error.message); return; }
-      state.sentTo = email;
+      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: false } });
+      if (error) { renderLogin(frAuthError(error)); return; }
       renderSent();
       break;
     }
+    case 'login-pw': {
+      const email = $('#email').value.trim();
+      const password = $('#pw').value;
+      if (!email || !password) { renderLogin('Entre ton e-mail et ton mot de passe.'); return; }
+      state.sentTo = email; rememberEmail(email);
+      t.disabled = true;
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) { renderLogin(frAuthError(error)); return; }
+      break; // onAuthStateChange prend le relais
+    }
+    case 'pw-save': savePassword(); break;
+    case 'pw-open': state.pwOpen = true; renderList(); break;
+    case 'pw-close': state.pwOpen = false; renderList(); break;
     case 'back-login': renderLogin(); break;
     case 'reload': location.reload(); break;
-    case 'logout': await sb.auth.signOut(); location.reload(); break;
+    case 'logout': await sb.auth.signOut({ scope: 'local' }); location.reload(); break;
     case 'new': state.editing = blank(); renderForm(); break;
     case 'edit': { const g = state.gifts.find((x) => x.id === id); state.editing = { ...blank(), ...g, price: String(g.price).replace('.', ','), note: g.note || '', url: g.url || '', merchant: g.merchant || '', image_url: g.image_url || '', category: catOf(g) || '', newCat: '' }; renderForm(); break; }
     case 'cancel-edit': state.editing = null; renderList(); break;
@@ -276,6 +359,12 @@ document.addEventListener('click', async (e) => {
     }
     default: break;
   }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'pw' || e.target.id === 'email') { e.preventDefault(); const b = document.querySelector('[data-action="login-pw"]'); if (b) b.click(); }
+  if (e.target.id === 'pw2') { e.preventDefault(); savePassword(); }
 });
 
 document.addEventListener('change', (e) => {
@@ -299,10 +388,12 @@ document.addEventListener('change', (e) => {
 });
 
 /* ---------- Démarrage ---------- */
+const urlError = linkErrorFromUrl();
+
 async function start(session) {
   state.session = session;
-  if (!session) { renderLogin(); return; }
-  $('#who').innerHTML = `${esc(session.user.email)} · <button class="link-light" type="button" data-action="logout">Se déconnecter</button>`;
+  if (!session) { renderLogin(urlError); return; }
+  $('#who').innerHTML = `${esc(session.user.email)} · <button class="link-light" type="button" data-action="logout">Se déconnecter de cet appareil</button>`;
   const { data: owner } = await sb.rpc('is_owner');
   state.owner = !!owner;
   if (!state.owner) { renderNotOwner(); return; }
@@ -310,8 +401,15 @@ async function start(session) {
   renderList();
 }
 
-sb.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') start(session);
-});
+/* On ne redémarre l'écran que si la personne connectée change : revenir sur l'onglet
+   (après avoir copié un lien chez un vendeur, par exemple) ne doit pas effacer le formulaire. */
+let currentUid;
+function maybeStart(session) {
+  const uid = (session && session.user && session.user.id) || null;
+  if (uid === currentUid) { if (session) state.session = session; return; }
+  currentUid = uid;
+  start(session);
+}
+sb.auth.onAuthStateChange((event, session) => { maybeStart(session); });
 const { data } = await sb.auth.getSession();
-start(data.session);
+maybeStart(data.session);

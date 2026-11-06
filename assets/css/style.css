@@ -321,8 +321,51 @@ legend { padding: 0; margin-bottom: 10px; }
 }
 @keyframes toastIn { from { transform: translate(-50%, 16px); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
 
-/* ---------- Ordinateur ---------- */
-@media (min-width: 760px) {
+/* ---------- Décor au défilement (sapin, boules, guirlande, neige) ---------- */
+.hero, .wrap, .footer, .drift { position: relative; z-index: 1; }
+.decor { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; contain: strict; }
+.decor-snow { position: absolute; inset: 0; }
+.decor-side { position: absolute; top: 0; bottom: 0; width: var(--gw, 0px); display: none; }
+.deco-sides .decor-side { display: block; }
+.decor-left { left: 0; }
+.decor-right { right: 0; }
+.tree-wrap { position: absolute; left: 50%; bottom: 0; width: min(88%, 250px); transform: translate3d(-50%, 26px, 0); will-change: transform; }
+.tree { display: block; width: 100%; height: auto; max-height: 82vh; }
+.bulb .glow { opacity: 0; transition: opacity .6s ease; }
+.bulb .core { fill: #34433C; transition: fill .4s ease; }
+.bulb.on .glow { opacity: 1; }
+.bulb.on .core { fill: var(--on); }
+.tree .bulb.on .glow { animation: twinkleBulb var(--tw, 3s) ease-in-out infinite; }
+@keyframes twinkleBulb { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.star-shape { fill: #44554C; transition: fill .8s ease; }
+.star-glow { opacity: 0; transition: opacity 1s ease; }
+.tree.star-on .star-shape { fill: #F6DFA4; }
+.tree.star-on .star-glow { opacity: 1; animation: starPulse 2.8s ease-in-out infinite; }
+@keyframes starPulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
+.bauble { position: absolute; top: 0; left: var(--x); transform: translate3d(-50%, 0, 0); will-change: transform; }
+.bauble-swing { display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: swing var(--dur, 6s) ease-in-out var(--d, 0s) infinite; }
+@keyframes swing { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+.bauble-string { width: 1px; height: calc(var(--f) * 100vh); background: linear-gradient(rgba(210, 176, 114, .1), rgba(210, 176, 114, .75)); }
+.bauble-cap { width: calc(var(--s) * .3); height: calc(var(--s) * .17); margin-bottom: -1px; border-radius: 2px 2px 1px 1px; background: linear-gradient(90deg, #8E6E34, #E6CB93, #8E6E34); }
+.bauble-ball { width: var(--s); height: var(--s); border-radius: 50%; background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, .9) 0 5%, var(--c2) 15%, var(--c1) 58%, var(--c0) 100%); box-shadow: 0 0 calc(var(--s) * .6) rgba(var(--g), .2); }
+.decor-top {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 5; display: none; pointer-events: none;
+  padding-top: env(safe-area-inset-top); opacity: 0; transform: translateY(-14px); transition: opacity .5s ease, transform .5s ease;
+  padding-bottom: 16px;
+  background: linear-gradient(180deg, rgba(7, 17, 13, .97) 0%, rgba(7, 17, 13, .93) calc(100% - 16px), rgba(7, 17, 13, 0) 100%);
+}
+.deco-top .decor-top { display: block; }
+.decor-top.in { opacity: 1; transform: none; }
+.decor-top svg { display: block; width: 100%; height: 40px; }
+/* Les cadeaux apparaissent en douceur quand on arrive dessus */
+.js-reveal #grid .hang { opacity: 0; transition: opacity .6s ease var(--rd, 0ms); }
+.js-reveal #grid .hang > .tag { transform: translateY(26px); transition: transform .8s cubic-bezier(.2, .8, .2, 1) var(--rd, 0ms); }
+.js-reveal #grid .hang.shown { opacity: 1; }
+.js-reveal #grid .hang.shown > .tag { transform: none; }
+.js-reveal #grid .hang.shown-now, .js-reveal #grid .hang.shown-now > .tag { transition: none; }
+
+/* ---------- Tablette et ordinateur ---------- */
+@media (min-width: 700px) {
   .hero { height: 600px; }
   .hero-content { padding-top: 76px; gap: 16px; }
   .hero h1 { font-size: 76px; }
@@ -345,14 +388,15 @@ legend { padding: 0; margin-bottom: 10px; }
   .grabber { display: none; }
   @keyframes modalIn { from { transform: translate(-50%, -46%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
 }
-@media (min-width: 1140px) {
+/* Trois colonnes seulement sur les très grands écrans : on garde de la place pour le décor sur les côtés */
+@media (min-width: 1500px) {
   .grid { max-width: 1180px; }
   .grid > .hang { flex-basis: calc((100% - 52px) / 3); }
 }
 
 /* ---------- Moins d'animations ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .star, .fk, .hang, .seal-btn::after, .stamp-in, .stamp, .thud, .spark, .rise, .done, .sheet, .veil, .toast { animation: none !important; }
+  .star, .fk, .hang, .seal-btn::after, .stamp-in, .stamp, .thud, .spark, .rise, .done, .sheet, .veil, .toast, .bauble-swing, .tree .bulb.on .glow, .tree.star-on .star-glow { animation: none !important; }
   .fk, .spark { display: none; }
   .letter, .flap, .half { transition: none; }
   .intro.is-open { animation: none; opacity: 0; visibility: hidden; }

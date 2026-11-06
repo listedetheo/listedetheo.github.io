@@ -1,6 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 import { buildScene } from './scene.js';
+import { initDecor } from './decor.js';
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -702,5 +703,6 @@ buildScene(document.querySelector('[data-scene="intro"]'), { stars: 10, flakes: 
 buildScene(document.querySelector('[data-scene="hero"]'), { stars: 8, flakes: 10, seed: 3 });
 renderCountdown();
 render();
+initDecor();
 if (!LS.get('ldn_intro_seen')) showIntro();
 load().then(() => { if (!$('#intro').classList.contains('show')) jumpToHash(); });

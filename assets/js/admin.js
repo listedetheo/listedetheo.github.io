@@ -189,7 +189,7 @@ function renderForm() {
         <span class="help">Ouvre le lien pour vérifier qu'il tombe sur la bonne taille et la bonne couleur.</span>
         <div class="btn-row"><button class="b b-line" type="button" data-action="test-link">Ouvrir le lien</button></div></div>
       <div class="field"><label class="k" for="f-merchant">Vendeur</label><input id="f-merchant" class="box-in" maxlength="60" value="${esc(g.merchant)}" placeholder="Ex. Under Armour"><span class="help">Affiché sur la photo : « Voir chez … ».</span></div>
-      <div class="field"><label class="k" for="f-specs">Détails à respecter</label><input id="f-specs" class="box-in" value="${esc((g.specs || []).join(', '))}" placeholder="Taille M, Couleur : blanc"><span class="help">Sépare-les par des virgules.</span></div>
+      <div class="field"><label class="k" for="f-specs">Détails à respecter</label><textarea id="f-specs" class="box-area" rows="3" placeholder="Taille M&#10;Couleur : blanc">${esc((g.specs || []).join('\n'))}</textarea><span class="help">Un détail par ligne (les virgules sont autorisées, ex. 20,5 cm).</span></div>
       <div class="field span-2"><label class="k" for="f-note">Ton mot (écrit à la main sur l'étiquette)</label><textarea id="f-note" class="box-area" maxlength="400" placeholder="Ex. Pas blanc, il se salit trop vite !">${esc(g.note)}</textarea></div>
       <div class="field span-2"><span class="k">Photo</span>
         <div class="img-row">${g.image_url ? `<img class="preview-img" id="f-preview" src="${esc(g.image_url)}" alt="">` : '<div class="preview-img" id="f-preview" style="display:flex;align-items:center;justify-content:center;color:#5A615B">Aucune</div>'}
@@ -214,7 +214,7 @@ function readForm() {
   g.newCat = $('#f-newcat').value.trim();
   g.url = $('#f-url').value.trim();
   g.merchant = $('#f-merchant').value.trim();
-  g.specs = $('#f-specs').value.split(',').map((s) => s.trim()).filter(Boolean);
+  g.specs = $('#f-specs').value.split(/\n|·/).map((s) => s.trim()).filter(Boolean);
   g.note = $('#f-note').value.trim();
   g.image_url = $('#f-img').value.trim();
   g.allow_group = $('#f-group').checked;

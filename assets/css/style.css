@@ -135,6 +135,10 @@ a:hover { color: var(--gold-2); }
 .tab { flex: none; min-height: 44px; padding: 0 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-3); font: 500 14px var(--sans); white-space: nowrap; cursor: pointer; }
 .tab[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--gold); }
 .tab:hover { color: var(--text); }
+.mot { position: relative; margin: 0 auto 26px; max-width: 620px; padding: 18px 22px 14px; text-align: center; border-top: 1px solid rgba(210, 176, 114, .35); border-bottom: 1px solid rgba(210, 176, 114, .35); }
+.mot-text { margin: 0; font: italic 400 19px/1.45 var(--serif); color: var(--text); }
+.mot-sign { margin: 8px 0 0; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: #D2B072; }
+.mot-sign::before { content: '— '; }
 .hello { margin: 0 auto 26px; max-width: 760px; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(210, 176, 114, .4); background: rgba(244, 237, 224, .05); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .hello-name { font: italic 400 19px var(--serif); color: var(--text); }
 .hello-sub { font-size: 14px; color: var(--text-2); }
